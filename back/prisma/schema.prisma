@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AssetType {
+  computer
+  notebook
+  server
+  switch
+}
+
+enum AssetStatus {
+  online
+  offline
+  maintenance
+}
+
+model Asset {
+  id          String      @id @default(uuid())
+  tag         String      @unique
+  name        String
+  type        AssetType
+  status      AssetStatus @default(online)
+  department  String
+  responsible String
+  notes       String?
+
+  // Especificações geradas na criação (imutáveis)
+  os          String
+  cpuModel    String
+  cpuCores    Int
+  totalRamGb  Int
+  totalDiskGb Int
+  ip          String
+  macAddress  String
+  bootedAt    DateTime
+
+  // Usados só pelo gerador de métricas (deixam cada ativo com comportamento próprio)
+  seed        Int
+  loadFactor  Float
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("assets")
+}
