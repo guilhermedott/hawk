@@ -11,9 +11,10 @@ import { generateSpecs } from './specs.generator.js';
 export class AssetsService {
   constructor(private readonly prisma: PrismaService) { }
 
-  findAll({ type, status, search }: QueryAssetsDto) {
+  findAll(companyId: string, { type, status, search }: QueryAssetsDto) {
     return this.prisma.asset.findMany({
       where: {
+        companyId,
         type,
         status,
         ...(search && {
@@ -30,28 +31,28 @@ export class AssetsService {
     });
   }
 
-  async findOne(id: string) {
-    const asset = await this.prisma.asset.findUnique({ where: { id } });
+  // 404 também para ativo de outra empresa (não revela que ele existe)
+  async findOne(companyId: string, id: string) {
+    const asset = await this.prisma.asset.findFirst({ where: { id, companyId } });
     if (!asset) throw new NotFoundException(`Ativo ${id} não encontrado`);
     return asset;
   }
 
-  async create(dto: CreateAssetDto) {
+  async create(companyId: string, dto: CreateAssetDto) {
     try {
       return await this.prisma.asset.create({
-        data: { ...dto, ...generateSpecs(dto.type) },
+        data: { ...dto, companyId, ...generateSpecs(dto.type) },
       });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-        throw new ConflictException(`Já existe um ativo com a tag ${dto.tag}`);
+        throw new ConflictException(`Já existe um ativo com a tag ${dto.tag} na sua empresa`);
       }
       throw e;
     }
   }
 
-  async update(id: string, dto: UpdateAssetDto) {
-    const current = await this.findOne(id);
-    // se o ativo volta a ficar online, consideramos que foi religado agora
+  async update(companyId: string, id: string, dto: UpdateAssetDto) {
+    const current = await this.findOne(companyId, id);
     const rebooted = dto.status === 'online' && current.status !== 'online';
     return this.prisma.asset.update({
       where: { id },
@@ -59,18 +60,18 @@ export class AssetsService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(companyId: string, id: string) {
+    await this.findOne(companyId, id);
     await this.prisma.asset.delete({ where: { id } });
     return { deleted: true, id };
   }
 
-  async getMetrics(id: string) {
-    return generateMetrics(await this.findOne(id));
+  async getMetrics(companyId: string, id: string) {
+    return generateMetrics(await this.findOne(companyId, id));
   }
 
-  async getHistory(id: string, rangeMinutes: number, points: number) {
-    const asset = await this.findOne(id);
+  async getHistory(companyId: string, id: string, rangeMinutes: number, points: number) {
+    const asset = await this.findOne(companyId, id);
     const range = clamp(rangeMinutes, 5, 1440);
     const n = clamp(points, 10, 120);
     const end = Date.now();
@@ -93,8 +94,8 @@ export class AssetsService {
     return { assetId: id, rangeMinutes: range, points: n, series };
   }
 
-  async getSummary() {
-    const assets = await this.prisma.asset.findMany();
+  async getSummary(companyId: string) {
+    const assets = await this.prisma.asset.findMany({ where: { companyId } });
     const all = assets.map((asset) => ({ asset, m: generateMetrics(asset) }));
     const online = all.filter((x) => x.m.status === 'online');
     const avg = (pick: (m: (typeof all)[0]['m']) => number | undefined) =>
