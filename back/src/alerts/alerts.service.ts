@@ -6,8 +6,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export class AlertsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findAll(level?: 'warning' | 'critical') {
-        const assets = await this.prisma.asset.findMany();
+    async findAll(companyId: string, level?: 'warning' | 'critical') {
+        const assets = await this.prisma.asset.findMany({ where: { companyId } });
 
         const items = assets
             .map((asset) => ({ asset, m: generateMetrics(asset) }))
