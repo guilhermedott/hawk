@@ -50,6 +50,7 @@ model Asset {
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
 
   @@unique([companyId, tag])
   @@index([companyId])
@@ -65,6 +66,8 @@ model User {
   updatedAt    DateTime @updatedAt
   membership   Membership?
   joinRequests JoinRequest[]
+  ticketsCreated  Ticket[] @relation("TicketCreator")
+  ticketsAssigned Ticket[] @relation("TicketAssignee")
 
   @@map("users")
 }
@@ -90,6 +93,7 @@ model Company {
   memberships  Membership[]
   joinRequests JoinRequest[]
   assets       Asset[]
+  tickets Ticket[]
 
   @@map("companies")
 }
@@ -123,4 +127,44 @@ model JoinRequest {
   @@index([companyId, status])
   @@index([userId, status])
   @@map("join_requests")
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+model Ticket {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  priority    TicketPriority @default(medium)
+  status      TicketStatus   @default(open)
+
+  assetId      String
+  companyId    String
+  createdById  String
+  assignedToId String?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  resolvedAt DateTime?
+
+  asset      Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy  User    @relation("TicketCreator", fields: [createdById], references: [id])
+  assignedTo User?   @relation("TicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, status])
+  @@index([assetId, status])
+  @@map("tickets")
 }
