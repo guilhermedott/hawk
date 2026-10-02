@@ -23,7 +23,7 @@ enum AssetStatus {
 
 model Asset {
   id          String      @id @default(uuid())
-  tag         String      @unique
+  tag         String
   name        String
   type        AssetType
   status      AssetStatus @default(online)
@@ -48,6 +48,11 @@ model Asset {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, tag])
+  @@index([companyId])
   @@map("assets")
 }
 
@@ -58,6 +63,64 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  membership   Membership?
+  joinRequests JoinRequest[]
 
   @@map("users")
+}
+
+enum MemberRole {
+  owner
+  member
+}
+
+enum JoinRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  // nome normalizado (minúsculo, sem espaços repetidos) para impedir duplicatas
+  nameKey   String   @unique
+  createdAt DateTime @default(now())
+
+  memberships  Membership[]
+  joinRequests JoinRequest[]
+  assets       Asset[]
+
+  @@map("companies")
+}
+
+model Membership {
+  id        String     @id @default(uuid())
+  role      MemberRole @default(member)
+  // @unique: um usuário pertence a no máximo uma empresa
+  userId    String     @unique
+  companyId String
+  createdAt DateTime   @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("memberships")
+}
+
+model JoinRequest {
+  id         String            @id @default(uuid())
+  status     JoinRequestStatus @default(pending)
+  userId     String
+  companyId  String
+  createdAt  DateTime          @default(now())
+  resolvedAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([userId, status])
+  @@map("join_requests")
 }
