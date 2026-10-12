@@ -108,11 +108,13 @@ export class AssetsService {
       online: online.length,
       offline: all.filter((x) => x.m.status === 'offline').length,
       maintenance: all.filter((x) => x.m.status === 'maintenance').length,
-      warning: all.filter((x) => x.m.health === 'warning').length,
-      critical: all.filter((x) => x.m.health === 'critical').length,
+      normal: online.filter((x) => x.m.health === 'ok').length,
+      warning: online.filter((x) => x.m.health === 'warning').length,
+      critical: online.filter((x) => x.m.health === 'critical').length,
       avgCpuPercent: avg((m) => m.cpuUsagePercent),
       avgRamPercent: avg((m) => m.ramUsagePercent),
       avgDiskPercent: avg((m) => m.diskUsagePercent),
+      avgNetworkMbps: avg((m) => (m.networkInMbps ?? 0) + (m.networkOutMbps ?? 0)),
     };
   }
 }
