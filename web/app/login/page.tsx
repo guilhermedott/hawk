@@ -64,10 +64,9 @@ export default function LoginPage() {
             />
             Lembrar-me
           </label>
-          {/* sem endpoint no back por enquanto */}
-          <button type="button" disabled title="Em breve" className="font-semibold text-hawk-accent/60">
+          <Link href="/forgot-password" className="font-semibold text-hawk-accent hover:underline">
             Esqueci minha senha
-          </button>
+          </Link>
         </div>
 
         <Button type="submit" icon={LogIn} loading={loading}>Login</Button>
