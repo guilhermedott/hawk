@@ -167,6 +167,7 @@ button { cursor: pointer; }
   font-weight: 700;
 }
 .avatar { width: 33px; height: 33px; font-size: 10px; }
+.avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .profile-copy { display: grid; min-width: 0; gap: 3px; }
 .profile-copy strong { overflow: hidden; color: var(--text); font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .profile-copy small { color: var(--muted); font-size: 10px; }
@@ -540,6 +541,22 @@ button { cursor: pointer; }
 .settings-info-grid span { color: var(--subtle); font-size: 8px; text-transform: uppercase; letter-spacing: .05em; }
 .settings-info-grid strong { color: var(--text); font-size: 10px; font-weight: 550; overflow-wrap: anywhere; }
 .settings-footnote { margin: -5px 0 0; color: var(--subtle); font-size: 9px; line-height: 1.5; }
+.profile-form { display: grid; gap: 14px; padding-top: 14px; }
+.profile-photo-row { display: flex; align-items: center; gap: 13px; }
+.profile-photo-preview { display: grid; width: 64px; height: 64px; flex: 0 0 auto; place-items: center; overflow: hidden; border: 1px solid #8b5cf655; border-radius: 50%; background: linear-gradient(140deg, #4f46e5, #9333ea); color: #fff; font-size: 18px; font-weight: 700; }
+.profile-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.profile-photo-actions { display: grid; justify-items: start; gap: 5px; }
+.profile-photo-actions strong, .profile-field > span { color: var(--subtle); font-size: 8px; text-transform: uppercase; letter-spacing: .05em; }
+.profile-photo-actions > span { color: var(--muted); font-size: 9px; }
+.profile-upload { position: relative; overflow: hidden; }
+.profile-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.profile-remove-photo { color: var(--muted); }
+.profile-field { display: grid; max-width: 420px; gap: 6px; }
+.profile-field input { width: 100%; border: 1px solid var(--line); border-radius: 5px; outline: 0; background: var(--bg); padding: 8px 10px; color: var(--text); font: inherit; font-size: 10px; }
+.profile-field input:focus { border-color: var(--blue-bright); }
+.profile-field > strong { color: var(--text); font-size: 10px; font-weight: 550; overflow-wrap: anywhere; }
+.profile-error { margin: 0; color: var(--red); font-size: 9px; }
+.profile-form .text-action:disabled { cursor: wait; opacity: .65; }
 
 @media (max-width: 1180px) {
   .page-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -70,6 +70,29 @@ export class AssetsService {
     return generateMetrics(await this.findOne(companyId, id));
   }
 
+  async getCompanyMetrics(companyId: string) {
+    const assets = await this.prisma.asset.findMany({
+      where: { companyId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return assets.map((asset) => ({
+      id: asset.id,
+      tag: asset.tag,
+      name: asset.name,
+      type: asset.type,
+      status: asset.status,
+      department: asset.department,
+      responsible: asset.responsible,
+      ip: asset.ip,
+      os: asset.os,
+      cpuModel: asset.cpuModel,
+      cpuCores: asset.cpuCores,
+      totalRamGb: asset.totalRamGb,
+      totalDiskGb: asset.totalDiskGb,
+      metrics: generateMetrics(asset),
+    }));
+  }
+
   async getHistory(companyId: string, id: string, rangeMinutes: number, points: number) {
     const asset = await this.findOne(companyId, id);
     const range = clamp(rangeMinutes, 5, 1440);

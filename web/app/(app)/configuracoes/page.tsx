@@ -1,14 +1,21 @@
 'use client';
 
-import { Building2, Clock3, MonitorCog, Moon, Sun, UserRound } from 'lucide-react';
+import { Building2, Clock3, ImagePlus, MonitorCog, Moon, Save, Sun, UserRound, X } from 'lucide-react';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { ApiError } from '@/lib/api';
 
 export default function ConfiguracoesPage() {
-  const { user, info } = useAuth();
+  const { user, info, updateProfile } = useAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [refreshInterval, setRefreshInterval] = useState('30');
   const [saved, setSaved] = useState(false);
+  const [profileName, setProfileName] = useState(user?.name ?? '');
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(user?.avatarDataUrl ?? null);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -24,6 +31,53 @@ export default function ConfiguracoesPage() {
     window.dispatchEvent(new CustomEvent('hawk:theme-change', { detail: theme }));
     window.dispatchEvent(new CustomEvent('hawk:refresh-interval', { detail: Number(refreshInterval) }));
     setSaved(true);
+  }
+
+  async function handleAvatarChange(file?: File) {
+    if (!file) return;
+    setProfileError('');
+    setProfileSaved(false);
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setProfileError('Selecione uma imagem JPEG, PNG ou WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('A imagem deve ter no máximo 5 MB.');
+      return;
+    }
+
+    try {
+      const image = await createImageBitmap(file);
+      const scale = Math.min(1, 256 / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Não foi possível processar a imagem.');
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      image.close();
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      if (dataUrl.length > 300_000) throw new Error('Não foi possível reduzir a imagem para o tamanho permitido.');
+      setAvatarDataUrl(dataUrl);
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : 'Não foi possível carregar a foto.');
+    }
+  }
+
+  async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingProfile(true);
+    setProfileSaved(false);
+    setProfileError('');
+    try {
+      await updateProfile(profileName.trim(), avatarDataUrl);
+      setProfileName(profileName.trim());
+      setProfileSaved(true);
+    } catch (error) {
+      setProfileError(error instanceof ApiError ? error.messages.join(', ') : 'Não foi possível salvar as alterações do perfil.');
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   return (
@@ -54,9 +108,52 @@ export default function ConfiguracoesPage() {
 
       <section className="settings-section">
         <div className="settings-section-heading"><span className="page-stat-icon orange"><UserRound size={17} /></span><div><h2>Conta</h2><p>Dados da sessão atualmente autenticada.</p></div></div>
-        <div className="settings-info-grid"><div><span>Nome</span><strong>{user?.name ?? '—'}</strong></div><div><span>E-mail</span><strong>{user?.email ?? '—'}</strong></div></div>
+        <form className="profile-form" onSubmit={saveProfile}>
+          <div className="profile-photo-row">
+            <div className="profile-photo-preview" aria-label="Pré-visualização da foto do perfil">
+              {avatarDataUrl
+                ? <Image src={avatarDataUrl} alt="Foto do perfil" width={64} height={64} unoptimized />
+                : <span>{profileName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'HA'}</span>}
+            </div>
+            <div className="profile-photo-actions">
+              <strong>Foto do perfil</strong>
+              <span>JPEG, PNG ou WebP. A imagem será redimensionada para até 256 px.</span>
+              <label className="text-action profile-upload">
+                <ImagePlus size={14} /> Escolher foto
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => {
+                    void handleAvatarChange(event.target.files?.[0]);
+                    event.target.value = '';
+                  }}
+                />
+              </label>
+              {avatarDataUrl && (
+                <button className="text-action profile-remove-photo" type="button" onClick={() => { setAvatarDataUrl(null); setProfileSaved(false); }}>
+                  <X size={14} /> Remover foto
+                </button>
+              )}
+            </div>
+          </div>
+          <label className="profile-field">
+            <span>Nome</span>
+            <input value={profileName} maxLength={80} required onChange={(event) => { setProfileName(event.target.value); setProfileSaved(false); }} />
+          </label>
+          <div className="profile-field">
+            <span>E-mail</span>
+            <strong>{user?.email ?? '—'}</strong>
+          </div>
+          {profileError && <p className="profile-error" role="alert">{profileError}</p>}
+          <div className="settings-actions">
+            {profileSaved && <span className="settings-saved" role="status">Perfil atualizado.</span>}
+            <button className="text-action" type="submit" disabled={savingProfile}>
+              <Save size={14} /> {savingProfile ? 'Salvando...' : 'Salvar perfil'}
+            </button>
+          </div>
+        </form>
       </section>
-      <p className="settings-footnote">Dados de empresa e conta são somente leitura. Para alterá-los, é necessário suporte da API.</p>
+      <p className="settings-footnote">Nome e foto são salvos na sua conta. Preferências do painel permanecem salvas neste navegador.</p>
     </div>
   );
 }

@@ -48,4 +48,45 @@ describe('AssetsService', () => {
     expect(summary.normal + summary.warning + summary.critical).toBe(1);
     expect(summary.avgNetworkMbps).toBeGreaterThanOrEqual(0);
   });
+
+  it('returns the current resource metrics for every company asset', async () => {
+    findAssets.mockResolvedValue([
+      {
+        id: 'asset-id',
+        tag: 'PC-001',
+        name: 'Estação',
+        type: 'computer',
+        status: 'online',
+        department: 'TI',
+        responsible: 'Ana',
+        ip: '192.168.0.10',
+        os: 'Linux',
+        cpuModel: 'CPU',
+        cpuCores: 4,
+        totalRamGb: 16,
+        totalDiskGb: 512,
+        createdAt: new Date(),
+        bootedAt: new Date(),
+        seed: 12,
+        loadFactor: 1,
+      },
+    ]);
+
+    const results = await service.getCompanyMetrics('company-id');
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      id: 'asset-id',
+      tag: 'PC-001',
+      metrics: {
+        assetId: 'asset-id',
+        status: 'online',
+        cpuUsagePercent: expect.any(Number),
+        ramUsagePercent: expect.any(Number),
+        diskUsagePercent: expect.any(Number),
+        networkInMbps: expect.any(Number),
+        networkOutMbps: expect.any(Number),
+      },
+    });
+  });
 });
