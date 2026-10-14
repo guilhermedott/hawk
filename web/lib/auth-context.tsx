@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api, tokenStore } from './api';
 
-export type User = { id: string; name: string; email: string };
+export type User = { id: string; name: string; email: string; avatarDataUrl: string | null };
 export type CompanyInfo = {
   company: { id: string; name: string } | null;
   role: 'owner' | 'member' | null;
@@ -16,6 +16,7 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string, remember: boolean) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  updateProfile: (name: string, avatarDataUrl: string | null) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 };
@@ -51,12 +52,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await refresh();
   }
 
+  async function updateProfile(name: string, avatarDataUrl: string | null) {
+    const updatedUser = await api<User>('/auth/me', { method: 'PATCH', body: { name, avatarDataUrl } });
+    setUser(updatedUser);
+  }
+
   const value: AuthState = {
     user, info, loading, refresh,
     login: (email, password, remember) =>
       authenticate('/auth/login', { email, password }, remember),
     register: (name, email, password) =>
       authenticate('/auth/register', { name, email, password }, true),
+    updateProfile,
     logout: () => {
       tokenStore.clear();
       setUser(null);

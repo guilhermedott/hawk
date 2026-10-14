@@ -15,8 +15,44 @@ import {
   ticketStatuses,
 } from '@/lib/dashboard-types';
 
+type AssetMetrics = {
+  collectedAt: string;
+  status: string;
+  health: string;
+  cpuUsagePercent?: number;
+  ramUsedGb?: number;
+  ramTotalGb?: number;
+  ramUsagePercent?: number;
+  diskUsedGb?: number;
+  diskFreeGb?: number;
+  diskTotalGb?: number;
+  diskUsagePercent?: number;
+  networkInMbps?: number;
+  networkOutMbps?: number;
+  temperatureC?: number;
+  uptimeSeconds: number;
+};
+type AssetWithMetrics = Pick<
+  Asset,
+  | 'id'
+  | 'tag'
+  | 'name'
+  | 'type'
+  | 'status'
+  | 'department'
+  | 'responsible'
+  | 'ip'
+  | 'os'
+> & {
+  cpuModel: string;
+  cpuCores: number;
+  totalRamGb: number;
+  totalDiskGb: number;
+  metrics: AssetMetrics;
+};
 type ReportsData = {
   assets: Asset[];
+  metrics: AssetWithMetrics[];
   summary: TicketSummary;
   alerts: AlertsResponse;
 };
@@ -36,6 +72,34 @@ const reports: Report[] = [
     description: 'Relação dos equipamentos cadastrados e suas informações.',
     count: (data) => data.assets.length,
     rows: (data) => [['Tag', 'Ativo', 'Tipo', 'Setor', 'Responsável', 'IP', 'Sistema operacional'], ...data.assets.map((asset) => [asset.tag, asset.name, assetTypeLabel(asset.type), asset.department, asset.responsible, asset.ip, asset.os])],
+  },
+  {
+    id: 'recursos',
+    title: 'Consumo de recursos dos equipamentos',
+    description: 'Snapshot de CPU, memória, disco, rede, temperatura e disponibilidade por equipamento.',
+    count: (data) => data.metrics.length,
+    rows: (data) => [
+      ['Tag', 'Equipamento', 'Status', 'Saúde', 'Coletado em', 'CPU (%)', 'RAM usada (GB)', 'RAM total (GB)', 'RAM (%)', 'Disco usado (GB)', 'Disco livre (GB)', 'Disco total (GB)', 'Disco (%)', 'Rede entrada (Mbps)', 'Rede saída (Mbps)', 'Temperatura (°C)', 'Uptime (s)'],
+      ...data.metrics.map(({ tag, name, metrics }) => [
+        tag,
+        name,
+        metrics.status,
+        metrics.health,
+        metrics.collectedAt,
+        String(metrics.cpuUsagePercent ?? ''),
+        String(metrics.ramUsedGb ?? ''),
+        String(metrics.ramTotalGb ?? ''),
+        String(metrics.ramUsagePercent ?? ''),
+        String(metrics.diskUsedGb ?? ''),
+        String(metrics.diskFreeGb ?? ''),
+        String(metrics.diskTotalGb ?? ''),
+        String(metrics.diskUsagePercent ?? ''),
+        String(metrics.networkInMbps ?? ''),
+        String(metrics.networkOutMbps ?? ''),
+        String(metrics.temperatureC ?? ''),
+        String(metrics.uptimeSeconds),
+      ]),
+    ],
   },
   {
     id: 'chamados',
@@ -68,12 +132,13 @@ function exportCsv(report: Report, data: ReportsData) {
 
 export default function RelatoriosPage() {
   const loadData = useCallback(async (): Promise<ReportsData> => {
-    const [assets, summary, alerts] = await Promise.all([
+    const [assets, metrics, summary, alerts] = await Promise.all([
       api<Asset[]>('/assets'),
+      api<AssetWithMetrics[]>('/assets/metrics'),
       api<TicketSummary>('/tickets/summary'),
       api<AlertsResponse>('/alerts'),
     ]);
-    return { assets, summary, alerts };
+    return { assets, metrics, summary, alerts };
   }, []);
   const { data, loading, error, reload } = useDashboardData(loadData);
 
@@ -94,7 +159,7 @@ export default function RelatoriosPage() {
               <button className="text-action" onClick={() => exportCsv(report, data)}><Download size={14} /> Exportar CSV</button>
             </article>
           ))}
-          <div className="report-note">Relatórios gerados com os dados atuais da empresa. O backend ainda não mantém versões históricas de relatórios ou eventos de auditoria.</div>
+          <div className="report-note">As métricas de recursos são geradas pelo backend para demonstração, não coletadas diretamente dos equipamentos. O relatório é um snapshot; métricas históricas não são armazenadas.</div>
         </section>
       )}
     </div>

@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
+import { UpdateProfileDto } from './dto/update-profile.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -42,6 +43,11 @@ export class AuthService {
         return this.toPublic(user);
     }
 
+    async updateProfile(userId: string, dto: UpdateProfileDto) {
+        const user = await this.users.updateProfile(userId, dto);
+        return this.toPublic(user);
+    }
+
     private async buildResponse(user: User) {
         const accessToken = await this.jwt.signAsync({ sub: user.id, email: user.email });
         return { accessToken, user: this.toPublic(user) };
@@ -49,6 +55,12 @@ export class AuthService {
 
     // nunca devolve o hash da senha
     private toPublic(user: User) {
-        return { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt };
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatarDataUrl: user.avatarDataUrl,
+            createdAt: user.createdAt,
+        };
     }
 }

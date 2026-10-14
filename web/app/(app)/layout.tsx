@@ -15,6 +15,7 @@ import {
   Sun,
   ChartNoAxesCombined,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
@@ -116,7 +117,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <LogOut size={17} strokeWidth={1.8} /><span>Sair</span>
           </button>
           <div className="profile-card">
-            <span className="avatar">{initials || 'AW'}</span>
+            <span className="avatar">
+              {user.avatarDataUrl
+                ? <Image src={user.avatarDataUrl} alt={`Foto de ${user.name}`} width={33} height={33} unoptimized />
+                : initials || 'AW'}
+            </span>
             <span className="profile-copy">
               <strong>{user.name}</strong>
               <small>{info.role === 'owner' ? 'Administrator' : 'Membro'}</small>

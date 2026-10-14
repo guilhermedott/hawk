@@ -25,6 +25,11 @@ export class AssetsController {
     return this.assetsService.getSummary(ctx.companyId);
   }
 
+  @Get('metrics')
+  metricsForCompany(@CurrentCompany() ctx: CompanyContext) {
+    return this.assetsService.getCompanyMetrics(ctx.companyId);
+  }
+
   @Get(':id')
   findOne(@CurrentCompany() ctx: CompanyContext, @Param('id') id: string) {
     return this.assetsService.findOne(ctx.companyId, id);
