@@ -55,11 +55,14 @@ export class AuthService {
 
     // nunca devolve o hash da senha
     private toPublic(user: User) {
+        const userWithAvatar = user as User & { avatarDataUrl?: string | null };
+
         return {
             id: user.id,
             name: user.name,
             email: user.email,
-            avatarDataUrl: user.avatarDataUrl,
+            //TODO: Por hora será deixado retornando null, mas futuramente será implementado o retorno da imagem do usuário.
+            avatarDataUrl: userWithAvatar.avatarDataUrl,
             createdAt: user.createdAt,
         };
     }
