@@ -9,7 +9,7 @@ async function bootstrap() {
     origin: process.env.WEB_URL ?? 'http://localhost:3000',
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
