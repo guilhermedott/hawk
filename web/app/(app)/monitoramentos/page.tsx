@@ -16,7 +16,7 @@ type MonitoredAsset = { asset: Asset; metrics: AssetMetrics };
 type MonitoringData = { summary: AssetSummary; assets: MonitoredAsset[] };
 
 const lanes = [
-  { title: 'Normal', key: 'normal', tone: 'green' },
+  { title: 'Normal', key: 'ok', tone: 'green' },
   { title: 'Atenção', key: 'warning', tone: 'amber' },
   { title: 'Crítico', key: 'critical', tone: 'red' },
   { title: 'Offline / Manutenção', key: 'offline', tone: 'muted' },
